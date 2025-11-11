@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -10,6 +10,21 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1.0.0/dist/fonts/geist-sans/style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/geist@1.0.0/dist/fonts/geist-mono/style.css">
+    <script>
+      try {
+        const saved = localStorage.getItem('theme');
+        if (saved === 'light') document.documentElement.classList.remove('dark');
+        else if (saved === 'dark') document.documentElement.classList.add('dark');
+        else if (saved === 'system') {
+          const mq = window.matchMedia('(prefers-color-scheme: dark)');
+          document.documentElement.classList.toggle('dark', mq.matches);
+        } else {
+          // default dark
+          document.documentElement.classList.add('dark');
+          localStorage.setItem('theme', 'dark');
+        }
+      } catch {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

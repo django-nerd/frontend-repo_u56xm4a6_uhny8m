@@ -22,25 +22,37 @@
   }
 }
 
-/* Custom utility classes for shadcn/ui patterns */
-@layer utilities {
-  .animate-in {
-    animation-name: animateIn;
-    animation-duration: 350ms;
-    --tw-enter-opacity: initial;
-    --tw-enter-scale: initial;
-    --tw-enter-rotate: initial;
-    --tw-enter-translate-x: initial;
-    --tw-enter-translate-y: initial;
+/* Light/Dark surface tokens, Apple‑esque neutrals */
+@layer base {
+  :root {
+    --surface: 248 7% 97%; /* neutral-50 */
+    --panel: 0 0% 100%;    /* white */
+    --border: 220 14% 96%; /* gray-100 */
+    --text: 222 47% 11%;   /* gray-900 */
+    --muted: 215 16% 47%;  /* gray-500 */
+    --accent: 217 91% 60%; /* blue-500 */
   }
+  .dark {
+    --surface: 240 10% 4%;   /* near-black */
+    --panel: 240 6% 10%;     /* slate-900 */
+    --border: 240 5% 26%;    /* slate-700 */
+    --text: 0 0% 98%;        /* zinc-50 */
+    --muted: 240 5% 64%;     /* slate-300 */
+    --accent: 217 91% 60%;   /* blue-500 */
+  }
+}
 
-  .animate-out {
-    animation-name: animateOut;
-    animation-duration: 350ms;
-    --tw-exit-opacity: initial;
-    --tw-exit-scale: initial;
-    --tw-exit-rotate: initial;
-    --tw-exit-translate-x: initial;
-    --tw-exit-translate-y: initial;
+@layer utilities {
+  .surface {
+    background-color: hsl(var(--surface));
+  }
+  .panel {
+    background-color: hsl(var(--panel));
+  }
+  .text-basecolor {
+    color: hsl(var(--text));
+  }
+  .border-base {
+    border-color: hsl(var(--border));
   }
 }
