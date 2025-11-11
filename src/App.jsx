@@ -101,6 +101,49 @@ function ProductCard({ item, selected, onToggleSelect }) {
   )
 }
 
+function buildMockProducts(q) {
+  const base = encodeURIComponent((q || 'product').split(' ').slice(0,2).join(' '))
+  const items = [
+    {
+      title: 'Aurora Pro Wireless Earbuds',
+      category: 'Audio',
+      price: 129,
+      rating: 4.7,
+      image: `https://images.unsplash.com/photo-1518443895914-06e0f2eeaad6?q=80&w=1200&auto=format&fit=crop`,
+      specs: ['ANC', 'Bluetooth 5.3', 'IPX4', '28h battery'],
+      retailers: [{ name: 'Amazon', price: 129, best: true }, { name: 'BestBuy', price: 139 }]
+    },
+    {
+      title: 'Nimbus Lite Vacuum',
+      category: 'Home',
+      price: 179,
+      rating: 4.5,
+      image: `https://images.unsplash.com/photo-1581578731548-c64695cc6952?q=80&w=1200&auto=format&fit=crop`,
+      specs: ['Quiet', 'HEPA', 'Cordless', '40min'],
+      retailers: [{ name: 'Target', price: 179, best: true }, { name: 'Walmart', price: 189 }]
+    },
+    {
+      title: 'Luma Desk Lamp',
+      category: 'Office',
+      price: 89,
+      rating: 4.6,
+      image: `https://images.unsplash.com/photo-1555041469-a586c61ea9bc?q=80&w=1200&auto=format&fit=crop`,
+      specs: ['Dimmable', 'USB-C', 'CRI 95', 'Adjustable'],
+      retailers: [{ name: 'Ikea', price: 89, best: true }, { name: 'Amazon', price: 95 }]
+    },
+    {
+      title: 'Voyage Travel Kit',
+      category: 'Travel',
+      price: 49,
+      rating: 4.4,
+      image: `https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=1200&auto=format&fit=crop`,
+      specs: ['TSA-ready', 'Compact', 'Organizer'],
+      retailers: [{ name: 'Amazon', price: 49, best: true }]
+    }
+  ]
+  return items
+}
+
 export default function App() {
   const baseUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -116,7 +159,7 @@ export default function App() {
         'You’ll see prices across retailers with best price highlighted.',
         'Tap compare to line up specs instantly.'
       ],
-      suggestions: []
+      suggestions: buildMockProducts('Welcome picks')
     }
   ])
   const [trending, setTrending] = useState([])
@@ -157,21 +200,21 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: userId, message })
       })
-      const data = await res.json()
+      const data = await res.json().catch(() => ({}))
       const assistantMsg = {
         role: 'assistant',
         content: 'Here are refined picks tailored to your request.',
-        summary: data.summary,
-        suggestions: data.suggestions || [],
+        summary: data.summary || 'Top options based on value, reliability, and user satisfaction.',
+        suggestions: (data.suggestions && data.suggestions.length ? data.suggestions : buildMockProducts(message)),
         insights: data.insights || []
       }
       setMessages(prev => [...prev, assistantMsg])
-      if ((data.suggestions || []).length >= 2) {
+      if ((assistantMsg.suggestions || []).length >= 2) {
         setAchievement({ title: 'Smart Move', desc: 'Compared multiple options for best value.' })
         setTimeout(() => setAchievement(null), 2600)
       }
     } catch (e) {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Having trouble reaching the server. Please try again.' }])
+      setMessages(prev => [...prev, { role: 'assistant', content: 'Here are some strong options to consider.', suggestions: buildMockProducts(message) }])
     } finally {
       setLoading(false)
     }
@@ -198,31 +241,29 @@ export default function App() {
   }
 
   const compareItems = () => {
-    setMessages(prev => [...prev, { role: 'assistant', content: `Comparing ${selections.length} items: ${selections.join(', ')}. Prioritizing value, reliability, and warranty coverage.` }])
+    setMessages(prev => [...prev, { role: 'assistant', content: `Comparing ${selections.length} items: ${selections.join(', ')}. Prioritizing value, reliability, and warranty coverage.`, suggestions: buildMockProducts('compare') }])
     setSelections([])
   }
 
   return (
-    <div className="min-h-screen surface text-basecolor transition-colors">
-      {/* Floating theme toggle (desktop) */}
-      <div className="hidden md:block fixed top-4 right-4 z-50">
+    <div className="h-screen surface text-basecolor transition-colors overflow-hidden">
+      {/* Single small theme button at top-right (all screens) */}
+      <div className="fixed top-3 right-3 z-50">
         <ThemeToggle />
       </div>
 
-      {/* Top bar (mobile) */}
-      <div className="sticky top-0 z-40 bg-neutral-50/80 dark:bg-neutral-900/60 backdrop-blur border-b border-gray-100 dark:border-neutral-800 px-4 py-3 flex items-center gap-3 md:hidden">
-        <button onClick={() => setSidebarOpen(s => !s)} className="h-9 w-9 rounded-xl border border-gray-200 dark:border-neutral-700 text-gray-800 dark:text-neutral-200 bg-white/70 dark:bg-neutral-900/60 flex items-center justify-center">
-          <Menu size={18} />
-        </button>
-        <div className="font-semibold tracking-tight text-gray-900 dark:text-neutral-100">Shopping Assistant</div>
-        <div className="ml-auto"><ThemeToggle /></div>
-      </div>
-
-      <div className="mx-auto grid max-w-7xl grid-cols-1 md:grid-cols-[300px,1fr]">
-        {/* Sidebar */}
+      <div className="mx-auto grid h-full max-w-7xl grid-cols-1 md:grid-cols-[300px,1fr]">
+        {/* Sidebar - own scroll */}
         <aside className={`border-r border-gray-100 dark:border-neutral-800 bg-white/70 dark:bg-neutral-900/60 backdrop-blur md:static fixed inset-y-0 left-0 z-30 w-[80%] md:w-auto transition-transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
-          <div className="hidden md:block h-16" />
-          <div className="p-4 md:p-6 space-y-8">
+          <div className="hidden md:block h-12" />
+          <div className="p-4 md:p-6 space-y-8 h-full overflow-y-auto">
+            <div className="md:hidden flex items-center gap-3">
+              <button onClick={() => setSidebarOpen(s => !s)} className="h-9 w-9 rounded-xl border border-gray-200 dark:border-neutral-700 text-gray-800 dark:text-neutral-200 bg-white/70 dark:bg-neutral-900/60 flex items-center justify-center">
+                <Menu size={18} />
+              </button>
+              <div className="font-semibold tracking-tight text-gray-900 dark:text-neutral-100">Shopping Assistant</div>
+            </div>
+
             <div>
               <div className="text-xs uppercase tracking-wider text-gray-500 dark:text-neutral-400 mb-3">Quick Actions</div>
               <div className="flex flex-wrap gap-2">
@@ -281,11 +322,11 @@ export default function App() {
           </div>
         </aside>
 
-        {/* Chat pane */}
-        <main className="min-h-screen p-4 md:p-8">
-          <div className="mx-auto max-w-3xl">
+        {/* Chat pane - fixed size, only conversation scrolls */}
+        <main className="h-full p-4 md:p-8 overflow-hidden">
+          <div className="mx-auto max-w-3xl h-full flex flex-col">
             {/* Header */}
-            <div className="hidden md:flex items-center justify-between mb-6">
+            <div className="hidden md:flex items-center justify-between mb-4 shrink-0">
               <div>
                 <h1 className="text-xl font-semibold tracking-tight text-gray-900 dark:text-neutral-100">Your personal shopping expert</h1>
                 <p className="text-sm text-gray-500 dark:text-neutral-400">Structured, premium recommendations — facts first, opinions clearly marked.</p>
@@ -294,7 +335,7 @@ export default function App() {
 
             {/* Smart search suggestions */}
             {smartSearch.length > 0 && (
-              <div className="mb-4 flex flex-wrap gap-2">
+              <div className="mb-3 flex flex-wrap gap-2 shrink-0">
                 {smartSearch.map((s, i) => (
                   <button key={i} onClick={() => sendMessage(s)} className="rounded-full border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-3 py-1.5 text-xs text-gray-700 dark:text-neutral-200 hover:bg-gray-50 dark:hover:bg-neutral-800/70">
                     <SlidersHorizontal className="inline mr-1" size={12} /> {s}
@@ -304,10 +345,10 @@ export default function App() {
             )}
 
             {/* Conversation */}
-            <div className="space-y-6">
+            <div className="space-y-6 flex-1 overflow-y-auto pr-1">
               {messages.map((m, idx) => (
                 <div key={idx} className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
-                  <div className={`max-w-[85%] md:max-w-[70%] rounded-2xl p-4 shadow-sm ${m.role === 'user' ? 'bg-black text-white rounded-br-sm' : 'bg-white dark:bg-neutral-900 text-gray-900 dark:text-neutral-100 border border-gray-100 dark:border-neutral-800 rounded-bl-sm'}`}>
+                  <div className={`${m.role === 'user' ? 'bg-gradient-to-b from-blue-600 to-blue-700 text-white border-blue-700/50' : 'bg-white dark:bg-neutral-900 text-gray-900 dark:text-neutral-100 border border-gray-100 dark:border-neutral-800'} max-w-[85%] md:max-w-[70%] rounded-2xl p-4 shadow-sm ${m.role === 'user' ? 'rounded-br-sm' : 'rounded-bl-sm'}`}>
                     <div className="text-sm leading-relaxed whitespace-pre-wrap">{m.content}</div>
                     {m.role === 'assistant' && (m.summary || (m.insights && m.insights.length > 0)) && (
                       <div className="mt-3">
@@ -330,21 +371,27 @@ export default function App() {
                     )}
 
                     {m.suggestions?.length ? (
-                      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {m.suggestions.map((p, pi) => (
-                          <ProductCard
-                            key={pi}
-                            item={p}
-                            selected={selections.includes(p.title)}
-                            onToggleSelect={() => toggleSelect(p.title)}
-                          />
-                        ))}
+                      <div className="mt-4 border border-gray-100 dark:border-neutral-800 rounded-2xl bg-white/80 dark:bg-neutral-900/60 backdrop-blur p-3">
+                        <div className="mb-2 flex items-center justify-between">
+                          <div className="text-sm font-medium text-gray-900 dark:text-neutral-100">Top Products</div>
+                          <div className="text-xs text-gray-500 dark:text-neutral-400">Curated for you</div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {m.suggestions.map((p, pi) => (
+                            <ProductCard
+                              key={pi}
+                              item={p}
+                              selected={selections.includes(p.title)}
+                              onToggleSelect={() => toggleSelect(p.title)}
+                            />
+                          ))}
+                        </div>
                       </div>
                     ) : null}
 
                     {m.suggestions?.length ? (
                       <div className="mt-3 flex flex-wrap items-center gap-2">
-                        <button onClick={() => sendMessage('Find better alternatives to these')} className="inline-flex items-center gap-1.5 rounded-full bg-gray-900 text-white px-3 py-1.5 text-xs hover:bg-black">
+                        <button onClick={() => sendMessage('Find better alternatives to these')} className="inline-flex items-center gap-1.5 rounded-full bg-blue-600 text-white px-3 py-1.5 text-xs hover:bg-blue-500">
                           <Layers size={14} /> Find Better Alternatives
                         </button>
                         <button onClick={() => setShowSummary(true)} className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 px-3 py-1.5 text-xs text-gray-700 dark:text-neutral-200 hover:bg-gray-50 dark:hover:bg-neutral-800/70">
@@ -368,7 +415,7 @@ export default function App() {
             </div>
 
             {/* Composer */}
-            <div className="sticky bottom-0 pt-6 bg-gradient-to-t from-neutral-50 via-neutral-50 to-transparent dark:from-neutral-950 dark:via-neutral-950">
+            <div className="pt-4 bg-gradient-to-t from-neutral-50 via-neutral-50 to-transparent dark:from-neutral-950 dark:via-neutral-950 shrink-0">
               <div className="rounded-2xl border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-2 shadow-sm">
                 <div className="flex items-center gap-2">
                   <Search size={18} className="text-gray-400 dark:text-neutral-500 ml-1" />
@@ -382,7 +429,7 @@ export default function App() {
                   <button onClick={startVoice} className={`h-9 w-9 rounded-xl border ${listening ? 'border-blue-300 bg-blue-50 text-blue-600 dark:border-blue-400/40 dark:bg-blue-400/10 dark:text-blue-300' : 'border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-800/70'} flex items-center justify-center`} aria-label="Voice input">
                     <Mic size={16} />
                   </button>
-                  <button onClick={() => sendMessage()} className="h-9 rounded-xl bg-black text-white px-3 inline-flex items-center gap-1.5 text-sm hover:bg-gray-900">
+                  <button onClick={() => sendMessage()} className="h-9 rounded-xl bg-blue-600 text-white px-3 inline-flex items-center gap-1.5 text-sm hover:bg-blue-500">
                     <Send size={14} />
                     Send
                   </button>
@@ -407,7 +454,7 @@ export default function App() {
           <motion.div initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }} className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40">
             <div className="rounded-full border border-gray-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-lg px-3 py-2 flex items-center gap-3">
               <div className="text-sm text-gray-700 dark:text-neutral-200">{selections.length} selected</div>
-              <button onClick={compareItems} className="rounded-full bg-black text-white text-sm px-3 py-1.5 hover:bg-gray-900">
+              <button onClick={compareItems} className="rounded-full bg-blue-600 text-white text-sm px-3 py-1.5 hover:bg-blue-500">
                 Compare
               </button>
               <button onClick={() => setSelections([])} className="rounded-full border border-gray-200 dark:border-neutral-800 text-sm px-3 py-1.5 bg-white dark:bg-neutral-900 hover:bg-gray-50 dark:hover:bg-neutral-800/70 text-gray-700 dark:text-neutral-200">

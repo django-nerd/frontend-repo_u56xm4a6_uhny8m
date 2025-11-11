@@ -6,6 +6,8 @@ function getSystemPrefersDark() {
   return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
 }
 
+const order = ['dark', 'light', 'system']
+
 export default function ThemeToggle({ className = '' }) {
   const [mode, setMode] = useState('dark') // default dark
 
@@ -37,29 +39,23 @@ export default function ThemeToggle({ className = '' }) {
     }
   }
 
-  const select = (val) => {
-    setMode(val)
-    localStorage.setItem('theme', val)
-    applyTheme(val)
+  const cycle = () => {
+    const idx = order.indexOf(mode)
+    const next = order[(idx + 1) % order.length]
+    setMode(next)
+    localStorage.setItem('theme', next)
+    applyTheme(next)
   }
 
-  const itemClass = (active) => `inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm transition-colors border ${
-    active ? 'bg-black text-white border-black' : 'bg-white/70 border-gray-200 hover:bg-gray-50 text-gray-700'
-  }`
+  const Icon = mode === 'light' ? Sun : mode === 'dark' ? Moon : Laptop2
 
   return (
-    <div className={`rounded-full backdrop-blur bg-white/70 border border-gray-200 p-1 shadow-sm ${className}`}>
-      <div className="flex items-center gap-1">
-        <button className={itemClass(mode === 'light')} onClick={() => select('light')} aria-label="Light mode">
-          <Sun size={16} /> Light
-        </button>
-        <button className={itemClass(mode === 'dark')} onClick={() => select('dark')} aria-label="Dark mode">
-          <Moon size={16} /> Dark
-        </button>
-        <button className={itemClass(mode === 'system')} onClick={() => select('system')} aria-label="System theme">
-          <Laptop2 size={16} /> System
-        </button>
-      </div>
-    </div>
+    <button
+      onClick={cycle}
+      aria-label={`Theme: ${mode}`}
+      className={`h-8 w-8 rounded-full border border-gray-200 dark:border-neutral-700 bg-white/70 dark:bg-neutral-900/60 text-gray-800 dark:text-neutral-200 flex items-center justify-center shadow-sm hover:bg-gray-50 dark:hover:bg-neutral-800/70 transition ${className}`}
+    >
+      <Icon size={16} />
+    </button>
   )
 }
